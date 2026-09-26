@@ -22,9 +22,7 @@ app.use('/api/auth/',authRoutes)
 app.use('/api/wishlist',wishlistRoutes)
 app.use('/api/payment',paymentRoutes)
 
-mongoose.connect(
-    (process.env.MONGO_URI)
-)
+mongoose.connect(process.env.MONGO_URI)
 .then(()=>console.log("MongoDB Connected"))
 .catch(err=> console.log(" DB Connection Error:", err))
 const PORT= process.env.PORT || 4000

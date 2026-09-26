@@ -23,7 +23,7 @@ app.use('/api/wishlist',wishlistRoutes)
 app.use('/api/payment',paymentRoutes)
 
 mongoose.connect(
-    "mongodb://localhost:27017/velaura"
+    (process.env.MONGO_URI)
 )
 .then(()=>console.log("MongoDB Connected"))
 .catch(err=> console.log(" DB Connection Error:", err))

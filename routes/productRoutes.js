@@ -6,8 +6,8 @@ const roleMidleware =require('../middleware/roleMidleware')
 const router=express.Router();
 
 router.post('/postProduct',authMiddleware,roleMidleware('admin'),upload.single('image'),productController.createProduct)
-router.get('/getProducts',authMiddleware,productController.getAllProduct)
-router.get('/getProduct/:id',authMiddleware,productController.getProductById)
+router.get('/getProducts',productController.getAllProduct)
+router.get('/getProduct/:id',productController.getProductById)
 router.put('/updateProduct/:id',authMiddleware,roleMidleware('admin'),productController.updateProduct)
 router.delete('/deleteProduct/:id',authMiddleware,roleMidleware('admin'),productController.deleteProduct)
 

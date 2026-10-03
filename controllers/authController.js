@@ -84,6 +84,19 @@ exports.login=async(req,res)=>{
             expiresIn:"1d"
         }
      )
+
+     const refreshToken= jwt.sign(
+        {
+            userId:user.id
+        },
+        process.env.JWT_REFRESH_SECRET,
+        {
+            expiresIn:"7d"
+        }
+     )
+      user.refreshToken =refreshToken
+        await user.save()
+        
      res.status(200).json({
         success:true,
         message:"Login successful",

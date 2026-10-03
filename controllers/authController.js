@@ -96,7 +96,7 @@ exports.login=async(req,res)=>{
      )
       user.refreshToken =refreshToken
         await user.save()
-        
+
      res.status(200).json({
         success:true,
         message:"Login successful",
@@ -146,4 +146,53 @@ exports.getProfile = async (req, res) => {
             message: "Internal server error"
         })
     }
+}
+
+exports.refreshToken=async(req,res)=>{
+try {
+    const{refreshToken}=req.body;
+    if(!refreshToken){
+        return res.status(401).json({
+            success:false,
+            message:"Refresh Token is required"
+        })
+    }
+
+    const decoded =jwt.verify(
+        refreshToken,
+        process.env.JWT_REFRESH_SECRET
+    )
+    
+    const user =await User.findById(decoded.userId)
+
+    if(!user || user.refreshToken !== refreshToken){
+        return res.status(401).json({
+            success:false,
+            message:"Invalid refresh Token"
+        })
+    }
+
+    const newAccessToken =jwt.sign(
+        {
+            userId:user.id,
+            role:user.role
+        },
+        process.env.JWT_SECRET,
+        {
+            expiresIn:"1d"
+        }
+    )
+
+    res.status(200).json({
+        success:true,
+        token:newAccessToken
+    })
+} catch (error) {
+    console.log("REFRESH TOKEN ERROR:",error);
+
+    return res.status(401).json({
+        success:false,
+        message:"Invalid or expired refresh token"
+    })
+}
 }

@@ -4,6 +4,7 @@ const authMiddleware = require('../middleware/authMiddleware')
 const router=express.Router()
 router.post("/register",authController.register)
 router.post("/login",authController.login)
+router.post('/refresh',authController.refreshToken)
 router.get('/profile',authMiddleware,authController.getProfile)
 
 module.exports=router

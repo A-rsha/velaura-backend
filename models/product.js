@@ -17,6 +17,11 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    wishlist:{
+        type:Boolean,
+        required:false,
+        default:false
+    },
     image: {
         type: String
     },

@@ -13,6 +13,18 @@ const productSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    isOffer:{
+        type:Boolean,
+        default:false
+    },
+    offerPercentage:{
+        type:Number,
+        default:0
+    },
+    offerPrice:{
+        type:Number,
+        default:0
+    },
     category: {
         type: String,
         required: true

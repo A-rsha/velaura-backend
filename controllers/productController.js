@@ -1,12 +1,15 @@
 
-const product = require('../models/product')
 const Product = require('../models/product')
 
 exports.createProduct = async (req, res) => {
     try {
         const {
-            title, description, price, category
+            title, description, price, category,isOffer,offerPercentage,offerPrice
         } = req.body
+
+        const offerStatus =isOffer === "true"
+        const percentage =Number(offerPercentage)
+        const finalOfferPrice =Number(offerPrice)
 
         if (!req.file) {
             return res.status(400).json({
@@ -15,7 +18,7 @@ exports.createProduct = async (req, res) => {
             })
         }
         const newProduct = new Product({
-            title, description, category, price, image: req.file.path,
+            title, description, category, price, isOffer:offerStatus, offerPercentage:percentage, offerPrice:finalOfferPrice, image: req.file.path,
             createdBy: req.user.userId
         })
         const savedProduct = await newProduct.save()
@@ -76,7 +79,10 @@ exports.updateProduct = async (req, res) => {
             title:req.body.title,
             description:req.body.description,
             category:req.body.category,
-            price:req.body.price
+            price:req.body.price,
+            isOffer: req.body.isOffer === "true",
+            offerPercentage: Number(req.body.offerPercentage) || 0,
+            offerPrice: Number(req.body.offerPrice) || 0
         }
 
         if(req.file){

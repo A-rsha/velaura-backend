@@ -10,6 +10,7 @@ const OrderRoutes = require('./routes/orderRoutes')
 const authRoutes =require('./routes/authRoutes')
 const wishlistRoutes =require('./routes/wishlistRoutes')
 const paymentRoutes =require('./routes/paymentRoutes')
+const categoryRoutes =require('./routes/categoryRoutes')
 
 const app = express ()
 app.use(cors());
@@ -21,6 +22,7 @@ app.use('/api/order',OrderRoutes)
 app.use('/api/auth/',authRoutes)
 app.use('/api/wishlist',wishlistRoutes)
 app.use('/api/payment',paymentRoutes)
+app.use('/api/category',categoryRoutes)
 
 mongoose.connect(process.env.MONGO_URI)
 .then(()=>console.log("MongoDB Connected"))

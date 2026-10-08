@@ -15,7 +15,8 @@ exports.createRazorpayOrder = async (req, res) => {
 
         const userId = req.user.userId;
 
-        const cart = await Cart.findOne({ userId });
+        const cart = await Cart.findOne({ userId })
+            .populate("items.productId");
 
         if (!cart) {
             return res.status(404).json({
@@ -33,13 +34,17 @@ exports.createRazorpayOrder = async (req, res) => {
 
         const totalAmount = cart.items.reduce(
             (total, item) => {
-                return total + (item.price * item.quantity);
+                const price = item.productId?.isOffer
+                    ? item.productId?.offerPrice
+                    : item.price;
+
+                return total + (price * item.quantity);
             },
             0
         );
 
         const options = {
-            amount: totalAmount * 100,
+            amount:Math.round( totalAmount * 100),
             currency: "INR"
         };
 
@@ -63,11 +68,11 @@ exports.createRazorpayOrder = async (req, res) => {
 };
 
 
-// Verify Razorpay Payment
+
 exports.verifyPayment = async (req, res) => {
     console.log("VERIFY PAYMENT API CALLED");
     try {
-          console.log("VERIFY BODY:", req.body);
+        console.log("VERIFY BODY:", req.body);
 
         const {
             razorpay_order_id,
@@ -109,10 +114,8 @@ exports.verifyPayment = async (req, res) => {
         const userId = req.user.userId;
 
 
-        // Get user's cart
-        const cart = await Cart.findOne({ userId });
-
-
+        const cart = await Cart.findOne({ userId })
+            .populate("items.productId");
         if (!cart) {
 
             return res.status(404).json({
@@ -134,7 +137,11 @@ exports.verifyPayment = async (req, res) => {
         // Calculate total amount
         const totalAmount = cart.items.reduce(
             (total, item) => {
-                return total + (item.price * item.quantity);
+                const price = item.productId?.isOffer
+                    ? item.productId?.offerPrice
+                    : item.price;
+
+                return total + (price * item.quantity);
             },
             0
         );
@@ -148,7 +155,9 @@ exports.verifyPayment = async (req, res) => {
             items: cart.items.map((item) => ({
                 productId: item.productId,
                 quantity: item.quantity,
-                price: item.price
+                price: item.productId?.isOffer
+                     ? item.productId?.offerPrice
+                     : item.price
             })),
 
             totalAmount: totalAmount,

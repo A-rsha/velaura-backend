@@ -84,3 +84,22 @@ exports.getProductReviews =async(req,res)=>{
         })
     }
 }
+exports.getAllReviews=async(req,res)=>{
+    try {
+        const reviews =await Review.find()
+        .populate('userId','name')
+        .populate('productId','title image price')
+        .sort({createdAt: -1})
+        .limit(6)
+
+        return res.status(200).json({
+            success:true,
+            counts:reviews.length,
+            data:reviews
+        })
+    } catch (error) {
+       console.log("Get all reviews error:", error)
+        return res.status(500).json({ 
+            success: false, message: error.message }) 
+    }
+}

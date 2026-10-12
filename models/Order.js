@@ -48,7 +48,61 @@ const orderSchema = new mongoose.Schema({
         type: String,
         enum: ["pending", "success", "failed"],
         default: "pending"
-    }
+    },
+    OrderStatus:{
+        type:String,
+        enum: ['pending', 'success', 'failed'],
+        default:"pending"
+    },
+    orderStatus:{
+        type:String,
+        enum:[
+            "placed",
+            "confirmed",
+            "shipped",
+            "out_for_delivery",
+            "delivered",
+            "cancelled"
+        ],
+        default:"placed"
+    },
+    trackingNumber:{
+        type:String,
+        default:null
+    },
+    shippedAt:{
+        type:Date,
+        default:null
+    },
+    deliveredAt:{
+        type:Date,
+        default:null
+    },
+
+    statusHistory:[
+        {
+            status:{
+                type:String,
+                enum:[
+                    "placed",
+                    "confirmed",
+                    "shipped",
+                    "out_for_delivery",
+                    "delivered",
+                    "cancelled"
+                ],
+                required:true
+            },
+            updatedAt:{
+                type:Date,
+                default:Date.now
+            },
+            note:{
+                type:String,
+                default: ""
+            }
+        }
+    ]
 
 }, { timestamps: true })
 

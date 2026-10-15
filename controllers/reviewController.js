@@ -103,3 +103,26 @@ exports.getAllReviews=async(req,res)=>{
             success: false, message: error.message }) 
     }
 }
+
+exports.deleteReview =async(req,res)=>{
+    try {
+        const deleteReview =await Review.findByIdAndDelete(req.params.id)
+
+        if(!deleteReview){
+            return res.status(404).json({
+                success:false,
+                message:"Review not found"
+            })
+        }
+        res.status(200).json({
+            success:true,
+            message:"Review deleted successfully"
+        })
+    } catch (error) {
+        console.log(error)
+        res.status(error.status || 500).json({
+            error:error.message || "Internal server error"
+        })
+        
+    }
+}

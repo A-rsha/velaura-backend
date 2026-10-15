@@ -73,6 +73,54 @@ exports.getProductById = async (req, res) => {
     }
 }
 
+exports.getOfferProducts =async(req,res)=>{
+    try {
+        const products =await Product.aggregate([
+            {
+            $match: {
+                isOffer:true,
+                offerPercentage: {$gt:0, $lte:30}
+            }
+        },
+        {
+            $limit:4
+        }
+        ])
+        return res.status(200).json({
+            success:true,
+            data:products
+        })
+    } catch (error) {
+        console.log("GET OFFER PRODUCTS ERROR:",error)
+        res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+exports.newArrivals =async(req,res)=>{
+    try {
+        const products = await Product.aggregate([
+            {
+                $sort:{
+                    createdAt:-1
+                }
+            },
+            {
+                $limit:4
+            }
+        ])
+        return res.status(200).json({
+            success:true,
+            data:products
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
 exports.updateProduct = async (req, res) => {
     try {
         const updateData={

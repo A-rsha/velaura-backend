@@ -12,6 +12,7 @@ const wishlistRoutes =require('./routes/wishlistRoutes')
 const paymentRoutes =require('./routes/paymentRoutes')
 const categoryRoutes =require('./routes/categoryRoutes')
 const reviewRoutes =require('./routes/reviewRoutes')
+const adRoutes =require('./routes/adRoutes')
 
 const app = express ()
 app.use(cors());
@@ -25,6 +26,7 @@ app.use('/api/wishlist',wishlistRoutes)
 app.use('/api/payment',paymentRoutes)
 app.use('/api/category',categoryRoutes)
 app.use('/api/review',reviewRoutes)
+app.use('/api/ads',adRoutes)
 
 mongoose.connect(process.env.MONGO_URI)
 .then(()=>console.log("MongoDB Connected"))

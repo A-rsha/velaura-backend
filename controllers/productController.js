@@ -11,14 +11,16 @@ exports.createProduct = async (req, res) => {
         const percentage =Number(offerPercentage)
         const finalOfferPrice =Number(offerPrice)
 
-        if (!req.file) {
+        if (!req.files || req.files.length < 3) {
             return res.status(400).json({
                 success: false,
-                message: "No image uploaded",
+                message: "Please upload at least 3 Images",
             })
         }
+
+        const imageUrls = req.files.map(file => file.path)
         const newProduct = new Product({
-            title, description, category, price, isOffer:offerStatus, offerPercentage:percentage, offerPrice:finalOfferPrice, image: req.file.path,
+            title, description, category, price, isOffer:offerStatus, offerPercentage:percentage, offerPrice:finalOfferPrice, image: imageUrls[0], images: imageUrls,
             createdBy: req.user.userId
         })
         const savedProduct = await newProduct.save()
@@ -123,46 +125,67 @@ exports.newArrivals =async(req,res)=>{
 }
 exports.updateProduct = async (req, res) => {
     try {
-        const updateData={
-            title:req.body.title,
-            description:req.body.description,
-            category:req.body.category,
-            price:req.body.price,
-            isOffer: req.body.isOffer === "true",
-            offerPercentage: Number(req.body.offerPercentage) || 0,
-            offerPrice: Number(req.body.offerPrice) || 0
+        const {
+            title,
+            description,
+            category,
+            price,
+            isOffer,
+            offerPercentage,
+            offerPrice
+        } = req.body
+
+        const updateData = {
+            title,
+            description,
+            category,
+            price,
+            isOffer: isOffer === "true",
+            offerPercentage: Number(offerPercentage) || 0,
+            offerPrice: Number(offerPrice) || 0
         }
 
-        if(req.file){
-            updateData.image =req.file.path
+        // Update images only when new images are uploaded
+        if (req.files && req.files.length > 0) {
+            const imageUrls = req.files.map((file) => file.path)
+
+            updateData.image = imageUrls[0]
+            updateData.images = imageUrls
         }
-        const updateProduct = await Product.findByIdAndUpdate(
+
+        const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
             updateData,
             {
                 new: true,
                 runValidators: true
-
             }
         )
-        if (!updateProduct) {
+
+        if (!updatedProduct) {
             return res.status(404).json({
                 success: false,
-                message: "product not found"
+                message: "Product not found"
             })
         }
-        res.status(200).json({
+
+        return res.status(200).json({
             success: true,
-            message: "product updated successfully",
-            data: updateProduct
+            message: "Product updated successfully",
+            data: updatedProduct
         })
+
     } catch (error) {
-        console.log(error)
-        res.status(error.status || 500).json({
-            error: error.message || "Internal server error"
+        console.log("UPDATE PRODUCT ERROR:", error)
+
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Internal server error"
         })
     }
 }
+
+
 
 exports.deleteProduct = async (req, res) => {
     try {

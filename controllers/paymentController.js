@@ -90,7 +90,7 @@ exports.verifyPayment = async (req, res) => {
             razorpay_payment_id;
 
 
-        // Generate expected signature
+        
         const expectedSignature = crypto
             .createHmac(
                 "sha256",

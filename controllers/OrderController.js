@@ -158,7 +158,6 @@ exports.updateOrderStatus = async (req, res) => {
         // Update order status
         order.orderStatus = orderStatus
 
-        // Save the date when the order is shipped
         if (orderStatus === "shipped") {
             order.shippedAt = new Date()
 
@@ -169,7 +168,7 @@ exports.updateOrderStatus = async (req, res) => {
             }
         }
 
-        // Save the delivery date
+     
         if (orderStatus === "delivered") {
             order.deliveredAt = new Date()
         }

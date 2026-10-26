@@ -8,9 +8,7 @@ const EmailOTP = require('../models/EmailOTP');
 const transporter = require('../config/email');
 
 
-// ========================================
-// REGISTER USER
-// ========================================
+
 exports.register = async (req, res) => {
     try {
         const { name, email, password } = req.body;

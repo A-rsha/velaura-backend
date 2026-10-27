@@ -123,12 +123,14 @@ exports.login = async (req, res) => {
         });
 
         // Send OTP email
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: normalizedEmail,
-            subject: "VELAURA Login Verification OTP",
-            text: `Your VELAURA login OTP is ${otp}. It expires in 5 minutes. Do not share this code with anyone.`
-        });
+      
+await transporter.sendMail({
+    to: normalizedEmail,
+    subject: "VELAURA Login Verification OTP",
+    text: `Your VELAURA login OTP is ${otp}. It expires in 5 minutes. Do not share this code with anyone.`
+});
+
+
 
         // Do not issue tokens before OTP verification
         return res.status(200).json({

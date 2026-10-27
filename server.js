@@ -15,15 +15,9 @@ const reviewRoutes =require('./routes/reviewRoutes')
 const adRoutes =require('./routes/adRoutes')
 const returnRoutes =require('./routes/returnRoutes')
 
-const transporter = require('./config/email');
 
-transporter.verify()
-    .then(() => {
-        console.log('✅ Email server connection successful');
-    })
-    .catch((error) => {
-        console.error('❌ Email server connection failed:', error.message);
-    });
+
+
 const app = express ()
 app.use(cors());
 app.use(express.json())

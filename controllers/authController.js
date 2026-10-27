@@ -60,7 +60,7 @@ exports.register = async (req, res) => {
 
 
 // ========================================
-// LOGIN - VERIFY PASSWORD AND SEND OTP
+// LOGIN - ADMIN DIRECT LOGIN, USER LOGIN OTP
 // ========================================
 exports.login = async (req, res) => {
     try {
@@ -75,7 +75,6 @@ exports.login = async (req, res) => {
 
         const normalizedEmail = email.trim().toLowerCase();
 
-        // Find registered user
         const user = await User.findOne({
             email: normalizedEmail
         });
@@ -87,7 +86,6 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Verify password
         const isPasswordMatch = await bcrypt.compare(
             password,
             user.password
@@ -100,21 +98,65 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Generate 6-digit OTP
+        // ========================================
+        // ADMIN LOGIN - NO OTP REQUIRED
+        // ========================================
+        if (user.role === "admin") {
+
+            const token = jwt.sign(
+                {
+                    userId: user.id,
+                    role: user.role
+                },
+                process.env.JWT_SECRET,
+                {
+                    expiresIn: "1d"
+                }
+            );
+
+            const refreshToken = jwt.sign(
+                {
+                    userId: user.id
+                },
+                process.env.JWT_REFRESH_SECRET,
+                {
+                    expiresIn: "7d"
+                }
+            );
+
+            user.refreshToken = refreshToken;
+            await user.save();
+
+            return res.status(200).json({
+                success: true,
+                requiresOTP: false,
+                message: "Admin login successful",
+                token,
+                refreshToken,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role
+                }
+            });
+        }
+
+        // ========================================
+        // NORMAL USER LOGIN - EXISTING OTP FLOW
+        // ========================================
+
         const otp = crypto.randomInt(100000, 1000000).toString();
 
-        // Hash OTP before storing
         const otpHash = crypto
-            .createHash('sha256')
+            .createHash("sha256")
             .update(otp)
-            .digest('hex');
+            .digest("hex");
 
-        // Remove previous OTP for this email
         await EmailOTP.deleteMany({
             email: normalizedEmail
         });
 
-        // Save OTP with 5-minute expiry
         await EmailOTP.create({
             email: normalizedEmail,
             otpHash,
@@ -122,17 +164,13 @@ exports.login = async (req, res) => {
             attempts: 0
         });
 
-        // Send OTP email
-      
-await transporter.sendMail({
-    to: normalizedEmail,
-    subject: "VELAURA Login Verification OTP",
-    text: `Your VELAURA login OTP is ${otp}. It expires in 5 minutes. Do not share this code with anyone.`
-});
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: normalizedEmail,
+            subject: "VELAURA Login Verification OTP",
+            text: `Your VELAURA login OTP is ${otp}. It expires in 5 minutes. Do not share this code with anyone.`
+        });
 
-
-
-        // Do not issue tokens before OTP verification
         return res.status(200).json({
             success: true,
             requiresOTP: true,
@@ -140,19 +178,14 @@ await transporter.sendMail({
         });
 
     } catch (error) {
-        console.error("LOGIN OTP ERROR:", error);
+        console.error("LOGIN ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Unable to send OTP. Please check the email configuration and try again."
+            message: "Unable to login. Please try again."
         });
     }
 };
-
-
-// ========================================
-// VERIFY LOGIN OTP AND COMPLETE LOGIN
-// ========================================
 exports.verifyLoginOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;

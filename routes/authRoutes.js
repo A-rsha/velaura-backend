@@ -4,6 +4,8 @@ const authMiddleware = require('../middleware/authMiddleware')
 const router=express.Router()
 router.post("/register",authController.register)
 router.post("/login",authController.login)
+router.post("/google", authController.googleLogin); 
+
 router.post("/send-otp", authController.sendRegistrationOTP)
 router.post("/verify-otp", authController.verifyRegistrationOTP);
 router.post(

@@ -3,9 +3,15 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
+const { OAuth2Client } = require('google-auth-library');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 const User = require('../models/User');
 const EmailOTP = require('../models/EmailOTP');
 const transporter = require('../config/email');
+
+
 
 
 
@@ -593,3 +599,116 @@ exports.verifyRegistrationOTP = async (req, res) => {
         });
     }
 };
+
+
+
+exports.googleLogin = async (req, res) => {
+    try {
+        const { credential } = req.body;
+
+        if (!credential) {
+            return res.status(400).json({
+                success: false,
+                message: "Google credential is required"
+            });
+        }
+
+        // Verify Google ID token
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+
+        if (!payload || !payload.sub || !payload.email || !payload.email_verified) {
+            return res.status(401).json({
+                success: false,
+                message: "Google account verification failed"
+            });
+        }
+
+        const googleId = payload.sub;
+        const normalizedEmail = payload.email.trim().toLowerCase();
+
+        // Find existing account
+        let user = await User.findOne({
+            email: normalizedEmail
+        });
+
+        if (user) {
+            // Don't automatically link Google to an existing password account
+            // unless it has already been linked to this Google account.
+            if (user.googleId && user.googleId !== googleId) {
+                return res.status(409).json({
+                    success: false,
+                    message: "This email is linked to another Google account."
+                });
+            }
+
+            if (!user.googleId) {
+                return res.status(409).json({
+                    success: false,
+                    message: "An account already exists with this email. Please login using your existing method first."
+                });
+            }
+        } else {
+            user = new User({
+                name: payload.name || normalizedEmail.split("@")[0],
+                email: normalizedEmail,
+                googleId,
+                role: "user"
+            });
+
+            await user.save();
+        }
+
+        // Generate VELAURA access token
+        const token = jwt.sign(
+            {
+                userId: user.id,
+                role: user.role
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "1d"
+            }
+        );
+
+        // Generate VELAURA refresh token
+        const refreshToken = jwt.sign(
+            {
+                userId: user.id
+            },
+            process.env.JWT_REFRESH_SECRET,
+            {
+                expiresIn: "7d"
+            }
+        );
+
+        user.refreshToken = refreshToken;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Google login successful",
+            token,
+            refreshToken,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        console.error("GOOGLE LOGIN ERROR:", error);
+
+        return res.status(401).json({
+            success: false,
+            message: "Google login failed. Please try again."
+        });
+    }
+};
+

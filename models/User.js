@@ -7,11 +7,20 @@ const userSchema=new mongoose.Schema({
     },
     email:{
         type:String,
-        required:true
+        required:true,
+        lowercase: true,
+        trim:true
     },
     password:{
         type:String,
-        required:true
+        required: function(){
+            return !this.googleId;
+        }
+    },
+
+    googleId: {
+        type:String,
+        default:null
     },
     
  role:{

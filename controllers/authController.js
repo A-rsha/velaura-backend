@@ -64,10 +64,74 @@ exports.register = async (req, res) => {
     }
 };
 
+// ========================================
+// VENDOR REGISTRATION
+// ========================================
 
-// ========================================
-// LOGIN - ADMIN DIRECT LOGIN, USER LOGIN OTP
-// ========================================
+exports.vendorRegister = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required"
+            });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({
+                success: false,
+                message: "Password must be at least 8 characters"
+            });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const existingUser = await User.findOne({
+            email: normalizedEmail
+        });
+
+        if (existingUser) {
+            return res.status(409).json({
+                success: false,
+                message: "Email already registered"
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newVendor = new User({
+            name: name.trim(),
+            email: normalizedEmail,
+            password: hashedPassword,
+            role: "vendor",
+            subscription: {
+                plan: null,
+                status: "inactive",
+                startDate: null,
+                endDate: null
+            }
+        });
+
+        await newVendor.save();
+
+        return res.status(201).json({
+            success: true,
+            message: "Vendor account created successfully"
+        });
+
+    } catch (error) {
+        console.error("VENDOR REGISTRATION ERROR:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to create vendor account"
+        });
+    }
+};
+
+
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -84,6 +148,7 @@ exports.login = async (req, res) => {
         const user = await User.findOne({
             email: normalizedEmail
         });
+        console.log("LOGIN USER ROLE:", user?.role);
 
         if (!user) {
             return res.status(400).json({
@@ -148,9 +213,7 @@ exports.login = async (req, res) => {
             });
         }
 
-        // ========================================
-        // NORMAL USER LOGIN - EXISTING OTP FLOW
-        // ========================================
+    
 
         const otp = crypto.randomInt(100000, 1000000).toString();
 
@@ -308,7 +371,8 @@ exports.verifyLoginOTP = async (req, res) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                subscription: user.subscription
             }
         });
 
@@ -323,9 +387,7 @@ exports.verifyLoginOTP = async (req, res) => {
 };
 
 
-// ========================================
-// GET USER PROFILE
-// ========================================
+
 exports.getProfile = async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -637,8 +699,7 @@ exports.googleLogin = async (req, res) => {
         });
 
         if (user) {
-            // Don't automatically link Google to an existing password account
-            // unless it has already been linked to this Google account.
+        
             if (user.googleId && user.googleId !== googleId) {
                 return res.status(409).json({
                     success: false,

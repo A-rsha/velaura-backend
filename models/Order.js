@@ -8,26 +8,84 @@ const orderSchema = new mongoose.Schema({
         required: true
     },
 
-    items: [
-        {
-            productId: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Product",
-                required: true
-            },
+   items: [
+    {
+        productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true
+        },
 
-            quantity: {
-                type: Number,
-                required: true
-            },
+        vendorId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
+        },
 
-            price: {
-                type: Number,
-                required: true
+        quantity: {
+            type: Number,
+            required: true
+        },
+
+        price: {
+            type: Number,
+            required: true
+        },
+
+        itemStatus: {
+            type: String,
+            enum: [
+                "placed",
+                "confirmed",
+                "shipped",
+                "out_for_delivery",
+                "delivered",
+                "cancelled"
+            ],
+            default: "placed"
+        },
+
+        trackingNumber: {
+            type: String,
+            default: null
+        },
+
+        shippedAt: {
+            type: Date,
+            default: null
+        },
+
+        deliveredAt: {
+            type: Date,
+            default: null
+        },
+
+        statusHistory: [
+            {
+                status: {
+                    type: String,
+                    enum: [
+                        "placed",
+                        "confirmed",
+                        "shipped",
+                        "out_for_delivery",
+                        "delivered",
+                        "cancelled"
+                    ]
+                },
+                updatedAt: {
+                    type: Date,
+                    default: Date.now
+                },
+                note: {
+                    type: String,
+                    default: ""
+                }
             }
-        }
-    ],
-
+        ]
+    }
+],
+  
     totalAmount: {
         type: Number,
         required: true
@@ -103,6 +161,7 @@ const orderSchema = new mongoose.Schema({
             }
         }
     ]
+    
 
 }, { timestamps: true })
 

@@ -15,4 +15,6 @@ router.post(
 router.post('/refresh',authController.refreshToken)
 router.get('/profile',authMiddleware,authController.getProfile)
 
+router.post("/vendor-register", authController.vendorRegister);
+
 module.exports=router

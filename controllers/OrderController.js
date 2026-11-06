@@ -1,5 +1,6 @@
 const Cart = require("../models/cart");
 const Order = require("../models/Order");
+const Product = require('../models/product')
 exports.createOrder = async (req, res) => {
     try {
         const userId = req.user.userId
@@ -12,7 +13,7 @@ exports.createOrder = async (req, res) => {
                 success: false,
                 message: "Cart not found"
             })
-        }
+        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
 
         if (cart.items.length === 0) {
             return res.status(400).json({
@@ -25,9 +26,42 @@ exports.createOrder = async (req, res) => {
             return total + (item.price * item.quantity)
         }, 0)
 
+        // Get vendor details of cart products
+        const productIds = cart.items.map(item => item.productId)
+
+        const products = await Product.find({
+            _id: { $in: productIds }
+        }).select('_id vendorId')
+
+        const vendorMap = new Map(
+            products.map(product => [
+                product._id.toString(),
+                product.vendorId
+            ])
+        )
+
+        // Add vendor and individual item status
+        const orderItems = cart.items.map(item => {
+            const itemData = item.toObject
+                ? item.toObject()
+                : item
+
+            return {
+                ...itemData,
+                vendorId: vendorMap.get(item.productId.toString()) || null,
+                itemStatus: 'placed',
+                statusHistory: [
+                    {
+                        status: 'placed',
+                        note: 'Order placed'
+                    }
+                ]
+            }
+        })
+
         const order = await Order.create({
             userId,
-            items: cart.items,
+            items: orderItems,
             totalAmount,
             shippingAddress,
             paymentMethod
@@ -48,7 +82,6 @@ exports.createOrder = async (req, res) => {
         })
     }
 }
-
 exports.getMyOrders=async(req,res)=>{
     try {
         const userId=req.user.userId
@@ -198,3 +231,35 @@ exports.updateOrderStatus = async (req, res) => {
     }
 }
 
+exports.getVendorOrders = async (req, res) => {
+    try {
+        const vendorId = req.user.userId
+
+        const orders = await Order.find({
+            "items.vendorId": vendorId
+        })
+            .populate("userId", "name email")
+            .populate("items.productId")
+            .sort({ createdAt: -1 })
+            .lean()
+
+        // Show only this vendor's products
+        const vendorOrders = orders.map(order => ({
+            ...order,
+            items: order.items.filter(item =>
+                item.vendorId?.toString() === vendorId.toString()
+            )
+        }))
+
+        return res.status(200).json({
+            success: true,
+            orders: vendorOrders
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}

@@ -1,4 +1,7 @@
-
+console.log(
+    'BREVO SENDER EMAIL LOADED:',
+    process.env.BREVO_SENDER_EMAIL ? 'YES' : 'NO'
+)
 const transporter = {
     async sendMail(mailOptions) {
         try {

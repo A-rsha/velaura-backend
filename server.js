@@ -14,7 +14,8 @@ const categoryRoutes =require('./routes/categoryRoutes')
 const reviewRoutes =require('./routes/reviewRoutes')
 const adRoutes =require('./routes/adRoutes')
 const returnRoutes =require('./routes/returnRoutes')
-
+const sellerSubscriptionRoutes =require('./routes/sellerSubscriptionRoutes')
+const sellerStoreRoutes = require('./routes/sellerStoreRoutes')
 
 
 
@@ -32,6 +33,8 @@ app.use('/api/category',categoryRoutes)
 app.use('/api/review',reviewRoutes)
 app.use('/api/ads',adRoutes)
 app.use('/api/return',returnRoutes)
+app.use('/api/sellerSubscription' ,sellerSubscriptionRoutes)
+app.use('/api/sellerStore',sellerStoreRoutes)
 
 mongoose.connect(process.env.MONGO_URI)
 .then(()=>console.log("MongoDB Connected"))

@@ -1,0 +1,55 @@
+const User = require('../models/User')
+
+const vendorSubscriptionMiddleware = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.userId)
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            })
+        }
+        if (user.role === 'admin') {
+    return next()
+}
+
+        if (user.role !== 'vendor') {
+            return res.status(403).json({
+                success: false,
+                message: 'Only vendors can perform this action'
+            })
+        }
+
+        const subscription = user.subscription
+
+        if (
+            !subscription ||
+            subscription.status !== 'active' ||
+            !subscription.endDate ||
+            new Date(subscription.endDate) <= new Date()
+        ) {
+            if (subscription?.status === 'active') {
+                user.subscription.status = 'expired'
+                await user.save()
+            }
+
+            return res.status(403).json({
+                success: false,
+                message: 'Your subscription has expired. Please renew your plan.'
+            })
+        }
+
+        next()
+
+    } catch (error) {
+        console.error('VENDOR SUBSCRIPTION ERROR:', error)
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to verify vendor subscription'
+        })
+    }
+}
+
+module.exports = vendorSubscriptionMiddleware

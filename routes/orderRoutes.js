@@ -16,6 +16,13 @@ router.put(
     orderController.updateOrderStatus
 )
 
+router.get(
+    '/getVendorOrders',
+    authMiddleware,
+    roleMiddleware('vendor'),
+    orderController.getVendorOrders
+)
+
 
 
 module.exports= router

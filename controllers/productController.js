@@ -21,7 +21,8 @@ exports.createProduct = async (req, res) => {
         const imageUrls = req.files.map(file => file.path)
         const newProduct = new Product({
             title, description, category, price, isOffer:offerStatus, offerPercentage:percentage, offerPrice:finalOfferPrice, image: imageUrls[0], images: imageUrls,
-            createdBy: req.user.userId
+            createdBy: req.user.userId,
+            vendorId: req.user.role === 'vendor' ? req.user.userId : null
         })
         const savedProduct = await newProduct.save()
         res.status(201).json({
@@ -123,6 +124,26 @@ exports.newArrivals =async(req,res)=>{
         })
     }
 }
+
+exports.getMyVendorProducts = async (req, res) => {
+    try {
+        const products = await Product.find({
+            vendorId: req.user.userId
+        }).sort({ createdAt: -1 })
+
+        return res.status(200).json({
+            success: true,
+            data: products
+        })
+    } catch (error) {
+        console.log("GET VENDOR PRODUCTS ERROR:", error)
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
 exports.updateProduct = async (req, res) => {
     try {
         const {
@@ -152,6 +173,25 @@ exports.updateProduct = async (req, res) => {
             updateData.image = imageUrls[0]
             updateData.images = imageUrls
         }
+
+        const existingProduct = await Product.findById(req.params.id)
+
+if (!existingProduct) {
+    return res.status(404).json({
+        success: false,
+        message: "Product not found"
+    })
+}
+
+if (
+    req.user.role === 'vendor' &&
+    existingProduct.vendorId?.toString() !== req.user.userId
+) {
+    return res.status(403).json({
+        success: false,
+        message: "You can only update your own products"
+    })
+}
 
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
@@ -189,6 +229,25 @@ exports.updateProduct = async (req, res) => {
 
 exports.deleteProduct = async (req, res) => {
     try {
+
+        const existingProduct = await Product.findById(req.params.id)
+
+if (!existingProduct) {
+    return res.status(404).json({
+        success: false,
+        message: "Product not found"
+    })
+}
+
+if (
+    req.user.role === 'vendor' &&
+    existingProduct.vendorId?.toString() !== req.user.userId
+) {
+    return res.status(403).json({
+        success: false,
+        message: "You can only delete your own products"
+    })
+}
         const deleteProduct = await Product.findByIdAndDelete(req.params.id);
 
         if (!deleteProduct) {

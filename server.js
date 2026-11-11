@@ -16,8 +16,7 @@ const adRoutes =require('./routes/adRoutes')
 const returnRoutes =require('./routes/returnRoutes')
 const sellerSubscriptionRoutes =require('./routes/sellerSubscriptionRoutes')
 const sellerStoreRoutes = require('./routes/sellerStoreRoutes')
-
-
+const AdminRoutes = require('./routes/AdminRoutes')
 
 const app = express ()
 app.use(cors());
@@ -35,6 +34,7 @@ app.use('/api/ads',adRoutes)
 app.use('/api/return',returnRoutes)
 app.use('/api/sellerSubscription' ,sellerSubscriptionRoutes)
 app.use('/api/sellerStore',sellerStoreRoutes)
+app.use('/api/admin', AdminRoutes)
 
 mongoose.connect(process.env.MONGO_URI)
 .then(()=>console.log("MongoDB Connected"))

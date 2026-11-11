@@ -27,37 +27,45 @@ exports.createOrder = async (req, res) => {
         }, 0)
 
         // Get vendor details of cart products
-        const productIds = cart.items.map(item => item.productId)
+const productIds = cart.items.map(item =>
+    item.productId?._id || item.productId
+)
 
-        const products = await Product.find({
-            _id: { $in: productIds }
-        }).select('_id vendorId')
+const products = await Product.find({
+    _id: { $in: productIds }
+}).select('_id vendorId createdBy')
 
-        const vendorMap = new Map(
-            products.map(product => [
-                product._id.toString(),
-                product.vendorId
-            ])
-        )
+// Map product ID with vendor ID
+const vendorMap = new Map(
+    products.map(product => [
+        product._id.toString(),
+        product.vendorId || product.createdBy
+    ])
+)
 
-        // Add vendor and individual item status
-        const orderItems = cart.items.map(item => {
-            const itemData = item.toObject
-                ? item.toObject()
-                : item
+// Add vendor ID and item status
+const orderItems = cart.items.map(item => {
 
-            return {
-                ...itemData,
-                vendorId: vendorMap.get(item.productId.toString()) || null,
-                itemStatus: 'placed',
-                statusHistory: [
-                    {
-                        status: 'placed',
-                        note: 'Order placed'
-                    }
-                ]
+    const itemData = item.toObject
+        ? item.toObject()
+        : item
+
+    const productId = item.productId?._id || item.productId
+
+    return {
+        ...itemData,
+        vendorId: vendorMap.get(productId.toString()) || null,
+        itemStatus: 'placed',
+        statusHistory: [
+            {
+                status: 'placed',
+                note: 'Order placed'
             }
-        })
+        ]
+    }
+})
+
+       
 
         const order = await Order.create({
             userId,
@@ -230,26 +238,61 @@ exports.updateOrderStatus = async (req, res) => {
         })
     }
 }
-
 exports.getVendorOrders = async (req, res) => {
     try {
         const vendorId = req.user.userId
 
+        // Find products belonging to this vendor
+        const vendorProducts = await Product.find({
+            $or: [
+                { vendorId: vendorId },
+                { createdBy: vendorId }
+            ]
+        }).select('_id')
+
+        const productIds = vendorProducts.map(
+            product => product._id
+        )
+
+        // Find orders containing this vendor's products
         const orders = await Order.find({
-            "items.vendorId": vendorId
+            $or: [
+                { "items.vendorId": vendorId },
+                { "items.productId": { $in: productIds } }
+            ]
         })
             .populate("userId", "name email")
             .populate("items.productId")
             .sort({ createdAt: -1 })
             .lean()
 
-        // Show only this vendor's products
-        const vendorOrders = orders.map(order => ({
-            ...order,
-            items: order.items.filter(item =>
-                item.vendorId?.toString() === vendorId.toString()
-            )
-        }))
+        // Filter only this vendor's products
+        const vendorOrders = orders.map(order => {
+
+            const vendorItems = order.items.filter(item => {
+
+                const product = item.productId
+
+                const itemVendorId = String(
+                    item.vendorId || ''
+                )
+
+                const productVendorId = String(
+                    product?.vendorId || product?.createdBy || ''
+                )
+
+                return (
+                    itemVendorId === String(vendorId) ||
+                    productVendorId === String(vendorId)
+                )
+            })
+
+            return {
+                ...order,
+                items: vendorItems
+            }
+
+        }).filter(order => order.items.length > 0)
 
         return res.status(200).json({
             success: true,
@@ -257,6 +300,8 @@ exports.getVendorOrders = async (req, res) => {
         })
 
     } catch (error) {
+        console.error('Get Vendor Orders Error:', error)
+
         return res.status(500).json({
             success: false,
             message: error.message
